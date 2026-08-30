@@ -14,11 +14,36 @@ let touchStartY = 0;
 
 let DOM = {}; 
 
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+
+const SHAPES = {
+    'I': [[1,1,1,1]],
+    'J': [[1,0,0],[1,1,1]],
+    'L': [[0,0,1],[1,1,1]],
+    'O': [[1,1],[1,1]],
+    'S': [[0,1,1],[1,1,0]],
+    'T': [[0,1,0],[1,1,1]],
+    'Z': [[1,1,0],[0,1,1]]
+};
+
+const COLORS = {
+    'I': '#00f0f0', 'J': '#0000f0', 'L': '#f0a000',
+    'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000'
+};
+
+let gameInterval = null;
+
 // ==========================================
 // 2. CONTROLADOR DE CARGA INICIAL
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Cargando juego...");
+    
+    // Forzar el foco de entrada inmediatamente
+    if (document.body) {
+        document.body.focus();
+    }
 
     DOM = {
         startScreen: document.getElementById('start-screen'),
@@ -54,6 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // 3. CONEXIÓN DEL SOCKET Y EVENTOS DE RED
 // ==========================================
 function initializeSocketConnection() {
+    if (typeof io === 'undefined') {
+        console.warn('Socket.io no está disponible globalmente.');
+        return;
+    }
+
     socket = io({
         transports: ['websocket', 'polling']
     });
@@ -149,47 +179,43 @@ function addEventListeners() {
         }
     });
 
-// Forzar el foco de teclado al hacer clic en cualquier parte del juego
-window.addEventListener('click', () => {
-    window.focus();
-});
+    // Mantener foco activo al hacer clic en cualquier parte de la pantalla
+    window.addEventListener('click', () => window.focus());
+    document.addEventListener('click', () => window.focus());
 
-// Escuchar teclas en 'window' con fase de captura (true)
-window.addEventListener('keydown', (e) => {
-    if (!gameActive) return;
+    // Capturador de Teclado (WASD + Flechas) en Fase de Captura (true)
+    window.addEventListener('keydown', (e) => {
+        if (!gameActive) return;
 
-    // Asegura que la ventana activa siga siendo el iframe del juego
-    window.focus();
+        window.focus();
 
-    const key = e.key ? e.key.toLowerCase() : '';
-    const code = e.code ? e.code : '';
+        const code = e.code || '';
+        const key = e.key ? e.key.toLowerCase() : '';
+        let mappedKey = null;
 
-    let mappedKey = null;
-
-    if (key === 'a' || key === 'arrowleft' || code === 'KeyA' || code === 'ArrowLeft') {
-        mappedKey = 'ArrowLeft';
-    } else if (key === 'd' || key === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') {
-        mappedKey = 'ArrowRight';
-    } else if (key === 's' || key === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') {
-        mappedKey = 'ArrowDown';
-    } else if (key === 'w' || key === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') {
-        mappedKey = 'ArrowUp';
-    } else if (key === ' ' || code === 'Space') {
-        mappedKey = ' ';
-    }
-
-    if (mappedKey) {
-        // Evita que Discord intercepte la tecla para atajos del cliente
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (gameMode === 'multiplayer' && myRole === 'constructor') {
-            if (socket) socket.emit('playerAction', mappedKey);
-        } else if (gameMode === 'single') {
-            handleSinglePlayerInput({ key: mappedKey });
+        if (code === 'KeyA' || key === 'a' || code === 'ArrowLeft' || key === 'arrowleft') {
+            mappedKey = 'ArrowLeft';
+        } else if (code === 'KeyD' || key === 'd' || code === 'ArrowRight' || key === 'arrowright') {
+            mappedKey = 'ArrowRight';
+        } else if (code === 'KeyS' || key === 's' || code === 'ArrowDown' || key === 'arrowdown') {
+            mappedKey = 'ArrowDown';
+        } else if (code === 'KeyW' || key === 'w' || code === 'ArrowUp' || key === 'arrowup') {
+            mappedKey = 'ArrowUp';
+        } else if (code === 'Space' || key === ' ') {
+            mappedKey = ' ';
         }
-    }
-}, true); // El 'true' permite capturar la tecla antes de que la intercepte el contenedor de Discord
+
+        if (mappedKey) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (gameMode === 'multiplayer' && myRole === 'constructor') {
+                if (socket) socket.emit('playerAction', mappedKey);
+            } else if (gameMode === 'single') {
+                handleSinglePlayerInput({ key: mappedKey });
+            }
+        }
+    }, true);
 
     safeListen(DOM.rotateButton, 'rotateButton', 'click', () => sendPlayerAction('rotate'));
     safeListen(DOM.spRotateButton, 'spRotateButton', 'click', () => handleSinglePlayerInput({ key: 'ArrowUp' }));
@@ -258,26 +284,6 @@ function handleTouchMove(e) {
 // ==========================================
 // 6. LÓGICA DE JUGABILIDAD (MODO INDIVIDUAL)
 // ==========================================
-const BOARD_WIDTH = 10;
-const BOARD_HEIGHT = 20;
-
-const SHAPES = {
-    'I': [[1,1,1,1]],
-    'J': [[1,0,0],[1,1,1]],
-    'L': [[0,0,1],[1,1,1]],
-    'O': [[1,1],[1,1]],
-    'S': [[0,1,1],[1,1,0]],
-    'T': [[0,1,0],[1,1,1]],
-    'Z': [[1,1,0],[0,1,1]]
-};
-
-const COLORS = {
-    'I': '#00f0f0', 'J': '#0000f0', 'L': '#f0a000',
-    'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000'
-};
-
-let gameInterval = null;
-
 function startSinglePlayerGame() {
     if (DOM.startScreen) DOM.startScreen.style.display = 'none';
     if (DOM.gameContent) DOM.gameContent.style.display = 'flex';
@@ -401,23 +407,19 @@ function rotateBlock() {
 function handleSinglePlayerInput(e) {
     if (!gameActive || !currentBlock) return;
     
-    const key = e.key.toLowerCase();
+    const key = e.key;
     
     switch (key) {
-        case 'arrowleft':
-        case 'a':
+        case 'ArrowLeft':
             if (!checkCollision(currentBlockX - 1, currentBlockY, currentBlock.matrix)) currentBlockX--;
             break;
-        case 'arrowright':
-        case 'd':
+        case 'ArrowRight':
             if (!checkCollision(currentBlockX + 1, currentBlockY, currentBlock.matrix)) currentBlockX++;
             break;
-        case 'arrowdown':
-        case 's':
+        case 'ArrowDown':
             moveBlockDown();
             break;
-        case 'arrowup':
-        case 'w':
+        case 'ArrowUp':
             rotateBlock();
             break;
         case ' ': 
@@ -431,7 +433,7 @@ function handleSinglePlayerInput(e) {
 }
 
 // ==========================================
-// 9. FUNCIÓN DE RENDERIZADO / DIBUJO
+// 9. FUNCIÓN DE DIBUJO / RENDERIZADO
 // ==========================================
 function drawBoard() {
     if (!DOM.gameBoard) return;
