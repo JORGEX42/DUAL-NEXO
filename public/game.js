@@ -149,22 +149,38 @@ function addEventListeners() {
         }
     });
 
-  document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', (e) => {
     if (!gameActive) return;
 
-    // Mapeo automático de WASD a las flechas correspondientes
-    const keyMap = {
-        'a': 'ArrowLeft',   'A': 'ArrowLeft',   'ArrowLeft': 'ArrowLeft',
-        'd': 'ArrowRight',  'D': 'ArrowRight',  'ArrowRight': 'ArrowRight',
-        's': 'ArrowDown',   'S': 'ArrowDown',   'ArrowDown': 'ArrowDown',
-        'w': 'ArrowUp',     'W': 'ArrowUp',     'ArrowUp': 'ArrowUp',
-        ' ': ' '
-    };
+    // Detectamos tanto el carácter (key) como la tecla física (code)
+    const key = e.key ? e.key.toLowerCase() : '';
+    const code = e.code ? e.code : '';
 
-    const mappedKey = keyMap[e.key];
+    let mappedKey = null;
+
+    // Movimiento Izquierda (A o Flecha Izquierda)
+    if (key === 'a' || key === 'arrowleft' || code === 'KeyA' || code === 'ArrowLeft') {
+        mappedKey = 'ArrowLeft';
+    } 
+    // Movimiento Derecha (D o Flecha Derecha)
+    else if (key === 'd' || key === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') {
+        mappedKey = 'ArrowRight';
+    } 
+    // Caída Suave (S o Flecha Abajo)
+    else if (key === 's' || key === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') {
+        mappedKey = 'ArrowDown';
+    } 
+    // Rotar (W o Flecha Arriba)
+    else if (key === 'w' || key === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') {
+        mappedKey = 'ArrowUp';
+    } 
+    // Caída Instantánea (Espacio)
+    else if (key === ' ' || code === 'Space') {
+        mappedKey = ' ';
+    }
 
     if (mappedKey) {
-        e.preventDefault(); // Evita el desplazamiento de pantalla dentro de Discord
+        e.preventDefault();
 
         if (gameMode === 'multiplayer' && myRole === 'constructor') {
             if (socket) socket.emit('playerAction', mappedKey);
