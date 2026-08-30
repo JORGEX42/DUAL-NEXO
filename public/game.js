@@ -149,24 +149,30 @@ function addEventListeners() {
         }
     });
 
-    document.addEventListener('keydown', (e) => {
-        if (!gameActive) return;
-        
-        // Mapear WASD a nombres de teclas equivalentes para compatibilidad total
-        let keyToSend = e.key;
-        const keyLower = e.key.toLowerCase();
-        
-        if (keyLower === 'a') keyToSend = 'ArrowLeft';
-        else if (keyLower === 'd') keyToSend = 'ArrowRight';
-        else if (keyLower === 's') keyToSend = 'ArrowDown';
-        else if (keyLower === 'w') keyToSend = 'ArrowUp';
+  document.addEventListener('keydown', (e) => {
+    if (!gameActive) return;
+
+    // Mapeo automático de WASD a las flechas correspondientes
+    const keyMap = {
+        'a': 'ArrowLeft',   'A': 'ArrowLeft',   'ArrowLeft': 'ArrowLeft',
+        'd': 'ArrowRight',  'D': 'ArrowRight',  'ArrowRight': 'ArrowRight',
+        's': 'ArrowDown',   'S': 'ArrowDown',   'ArrowDown': 'ArrowDown',
+        'w': 'ArrowUp',     'W': 'ArrowUp',     'ArrowUp': 'ArrowUp',
+        ' ': ' '
+    };
+
+    const mappedKey = keyMap[e.key];
+
+    if (mappedKey) {
+        e.preventDefault(); // Evita el desplazamiento de pantalla dentro de Discord
 
         if (gameMode === 'multiplayer' && myRole === 'constructor') {
-            if (socket) socket.emit('playerAction', keyToSend);
+            if (socket) socket.emit('playerAction', mappedKey);
         } else if (gameMode === 'single') {
-            handleSinglePlayerInput({ key: keyToSend });
+            handleSinglePlayerInput({ key: mappedKey });
         }
-    });
+    }
+});
 
     safeListen(DOM.rotateButton, 'rotateButton', 'click', () => sendPlayerAction('rotate'));
     safeListen(DOM.spRotateButton, 'spRotateButton', 'click', () => handleSinglePlayerInput({ key: 'ArrowUp' }));
