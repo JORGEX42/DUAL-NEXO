@@ -152,10 +152,19 @@ function addEventListeners() {
     document.addEventListener('keydown', (e) => {
         if (!gameActive) return;
         
+        // Mapear WASD a nombres de teclas equivalentes para compatibilidad total
+        let keyToSend = e.key;
+        const keyLower = e.key.toLowerCase();
+        
+        if (keyLower === 'a') keyToSend = 'ArrowLeft';
+        else if (keyLower === 'd') keyToSend = 'ArrowRight';
+        else if (keyLower === 's') keyToSend = 'ArrowDown';
+        else if (keyLower === 'w') keyToSend = 'ArrowUp';
+
         if (gameMode === 'multiplayer' && myRole === 'constructor') {
-            if (socket) socket.emit('playerAction', e.key);
+            if (socket) socket.emit('playerAction', keyToSend);
         } else if (gameMode === 'single') {
-            handleSinglePlayerInput(e);
+            handleSinglePlayerInput({ key: keyToSend });
         }
     });
 
@@ -369,17 +378,23 @@ function rotateBlock() {
 function handleSinglePlayerInput(e) {
     if (!gameActive || !currentBlock) return;
     
-    switch (e.key) {
-        case 'ArrowLeft':
+    const key = e.key.toLowerCase();
+    
+    switch (key) {
+        case 'arrowleft':
+        case 'a':
             if (!checkCollision(currentBlockX - 1, currentBlockY, currentBlock.matrix)) currentBlockX--;
             break;
-        case 'ArrowRight':
+        case 'arrowright':
+        case 'd':
             if (!checkCollision(currentBlockX + 1, currentBlockY, currentBlock.matrix)) currentBlockX++;
             break;
-        case 'ArrowDown':
+        case 'arrowdown':
+        case 's':
             moveBlockDown();
             break;
-        case 'ArrowUp':
+        case 'arrowup':
+        case 'w':
             rotateBlock();
             break;
         case ' ': 
