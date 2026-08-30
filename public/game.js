@@ -1,3 +1,6 @@
+// ==========================================
+// 1. VARIABLES DE ESTADO GLOBALES
+// ==========================================
 let socket = null;
 let myRole = null;
 let currentBoard = [];
@@ -14,8 +17,13 @@ const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 
 const SHAPES = {
-    'I': [[1,1,1,1]], 'J': [[1,0,0],[1,1,1]], 'L': [[0,0,1],[1,1,1]],
-    'O': [[1,1],[1,1]], 'S': [[0,1,1],[1,1,0]], 'T': [[0,1,0],[1,1,1]], 'Z': [[1,1,0],[0,1,1]]
+    'I': [[1,1,1,1]],
+    'J': [[1,0,0],[1,1,1]],
+    'L': [[0,0,1],[1,1,1]],
+    'O': [[1,1],[1,1]],
+    'S': [[0,1,1],[1,1,0]],
+    'T': [[0,1,0],[1,1,1]],
+    'Z': [[1,1,0],[0,1,1]]
 };
 
 const COLORS = {
@@ -23,8 +31,13 @@ const COLORS = {
     'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000'
 };
 
+// ==========================================
+// 2. INICIALIZACIÓN Y EVENTOS
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    document.body.focus();
+    // Forzar foco en el juego
+    if (document.body) document.body.focus();
+
     DOM = {
         startScreen: document.getElementById('start-screen'),
         playerRoleDisplay: document.getElementById('player-role-display'),
@@ -41,13 +54,76 @@ document.addEventListener('DOMContentLoaded', () => {
         constructorControls: document.getElementById('constructor-controls'),
         singlePlayerControls: document.getElementById('single-player-controls'),
         singlePlayerButton: document.getElementById('single-player-button'),
-        onlineMultiplayerButton: document.getElementById('online-multiplayer-button')
+        onlineMultiplayerButton: document.getElementById('online-multiplayer-button'),
+        rotateButton: document.getElementById('rotate-button'),
+        hardDropButton: document.getElementById('hard-drop-button'),
+        spRotateButton: document.getElementById('sp-rotate-button'),
+        spHardDropButton: document.getElementById('sp-hard-drop-button')
     };
 
     initializeSocketConnection();
     addEventListeners();
 });
 
+function addEventListeners() {
+    DOM.restartButton.addEventListener('click', () => location.reload());
+    
+    DOM.singlePlayerButton.addEventListener('click', () => {
+        gameMode = 'single';
+        gameActive = true;
+        DOM.startScreen.style.display = 'none';
+        DOM.gameContent.style.display = 'flex';
+        DOM.singlePlayerControls.style.display = 'flex';
+        DOM.constructorControls.style.display = 'none';
+        DOM.selectorSection.style.display = 'none';
+        DOM.playerRoleDisplay.textContent = "Modo: Individual";
+        startGameLoop();
+    });
+
+    DOM.onlineMultiplayerButton.addEventListener('click', () => {
+        if (socket && socket.connected) {
+            socket.emit('joinRoom', { channelId: 'default-room' });
+        }
+    });
+
+    // Mantener el foco al hacer click para Discord
+    window.addEventListener('click', () => window.focus());
+    document.addEventListener('click', () => window.focus());
+
+    // Control por teclado (WASD + Flechas) con fase de captura
+    window.addEventListener('keydown', (e) => {
+        if (!gameActive) return;
+        window.focus();
+        
+        const code = e.code || '';
+        const key = e.key ? e.key.toLowerCase() : '';
+        let mappedKey = null;
+
+        if (code === 'KeyA' || key === 'a' || code === 'ArrowLeft') mappedKey = 'ArrowLeft';
+        else if (code === 'KeyD' || key === 'd' || code === 'ArrowRight') mappedKey = 'ArrowRight';
+        else if (code === 'KeyS' || key === 's' || code === 'ArrowDown') mappedKey = 'ArrowDown';
+        else if (code === 'KeyW' || key === 'w' || code === 'ArrowUp') mappedKey = 'ArrowUp';
+        else if (code === 'Space' || key === ' ') mappedKey = ' ';
+
+        if (mappedKey) {
+            e.preventDefault(); 
+            e.stopPropagation();
+            if ((gameMode === 'multiplayer' && myRole === 'constructor') || gameMode === 'single') {
+                handleInput({ key: mappedKey });
+            }
+        }
+    }, true);
+
+    // Botones de pantalla (opcionales para móvil)
+    if (DOM.rotateButton) DOM.rotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
+    if (DOM.spRotateButton) DOM.spRotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
+    if (DOM.hardDropButton) DOM.hardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
+    if (DOM.spHardDropButton) DOM.spHardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
+}
+
+// ==========================================
+// 3. CONEXIÓN SOCKET
+// ==========================================
 function initializeSocketConnection() {
     socket = io();
 
@@ -55,11 +131,18 @@ function initializeSocketConnection() {
         if (DOM.statusMessage) DOM.statusMessage.textContent = 'Conectado. Elige un modo.';
     });
 
-    socket.on('roleAssignment', (role) => myRole = role);
+    socket.on('roleAssignment', (role) => {
+        myRole = role;
+    });
 
-    socket.on('gameStartReady', () => {
+    socket.on('gameStartReady', (data) => {
         gameMode = 'multiplayer';
         gameActive = true;
+
+        if (data && data.players) {
+            const me = data.players.find(p => p.id === socket.id);
+            if (me) myRole = me.role;
+        }
 
         DOM.startScreen.style.display = 'none';
         DOM.gameContent.style.display = 'flex';
@@ -69,18 +152,18 @@ function initializeSocketConnection() {
             DOM.singlePlayerControls.style.display = 'none';
             DOM.selectorSection.style.display = 'none';
             DOM.playerRoleDisplay.textContent = "Rol: Constructor";
-            startGameLoop(); // El Constructor es el anfitrión del tablero
+            startGameLoop(); 
         } else if (myRole === 'selector') {
             DOM.constructorControls.style.display = 'none';
             DOM.singlePlayerControls.style.display = 'none';
             DOM.selectorSection.style.display = 'block';
             DOM.playerRoleDisplay.textContent = "Rol: Selector";
-            populateSelectorBlocks(getRandomShapes(3)); // 3 Piezas aleatorias iniciales
+            populateSelectorBlocks(getRandomShapes(3));
         }
     });
 
     socket.on('gameStateUpdate', (data) => {
-        if (myRole === 'selector') { // El selector solo dibuja lo que recibe
+        if (myRole === 'selector') {
             currentBoard = data.board;
             currentBlock = data.currentBlock;
             currentBlockX = data.x;
@@ -108,53 +191,12 @@ function initializeSocketConnection() {
         DOM.gameOverOverlay.style.display = 'flex';
         let msg = data.winner === myRole ? "¡HAS GANADO! 🏆" : "Has Perdido 💀";
         let reason = data.reason === 'time' ? "El Constructor sobrevivió 15 minutos." : "El tablero se llenó.";
-        DOM.gameOverMessage.innerHTML = `${msg}<br><span style='font-size:16px; font-weight:normal'>${reason}</span>`;
+        DOM.gameOverMessage.innerHTML = `${msg}<br><span style='font-size:16px; font-weight:normal; margin-top:10px; display:block;'>${reason}</span>`;
     });
-}
-
-function addEventListeners() {
-    DOM.restartButton.addEventListener('click', () => location.reload());
-    DOM.singlePlayerButton.addEventListener('click', () => {
-        gameMode = 'single';
-        gameActive = true;
-        DOM.startScreen.style.display = 'none';
-        DOM.gameContent.style.display = 'flex';
-        DOM.singlePlayerControls.style.display = 'flex';
-        DOM.playerRoleDisplay.textContent = "Modo: Individual";
-        startGameLoop();
-    });
-
-    DOM.onlineMultiplayerButton.addEventListener('click', () => {
-        if (socket.connected) socket.emit('joinRoom', { channelId: 'default-room' });
-    });
-
-    window.addEventListener('click', () => window.focus());
-    window.addEventListener('keydown', (e) => {
-        if (!gameActive) return;
-        window.focus();
-        
-        const code = e.code || '';
-        const key = e.key ? e.key.toLowerCase() : '';
-        let mappedKey = null;
-
-        if (code === 'KeyA' || key === 'a' || code === 'ArrowLeft') mappedKey = 'ArrowLeft';
-        else if (code === 'KeyD' || key === 'd' || code === 'ArrowRight') mappedKey = 'ArrowRight';
-        else if (code === 'KeyS' || key === 's' || code === 'ArrowDown') mappedKey = 'ArrowDown';
-        else if (code === 'KeyW' || key === 'w' || code === 'ArrowUp') mappedKey = 'ArrowUp';
-        else if (code === 'Space' || key === ' ') mappedKey = ' ';
-
-        if (mappedKey) {
-            e.preventDefault(); e.stopPropagation();
-            // Solo el Constructor o un jugador en modo Single procesan inputs
-            if ((gameMode === 'multiplayer' && myRole === 'constructor') || gameMode === 'single') {
-                handleInput({ key: mappedKey });
-            }
-        }
-    }, true);
 }
 
 // ==========================================
-// FUNCIONES DEL SELECTOR
+// 4. FUNCIONES DEL SELECTOR
 // ==========================================
 function getRandomShapes(count) {
     const types = Object.keys(SHAPES);
@@ -168,27 +210,40 @@ function getRandomShapes(count) {
 function populateSelectorBlocks(options) {
     if (!DOM.blockSelectionDiv) return;
     DOM.blockSelectionDiv.innerHTML = '';
+    
     options.forEach(type => {
         const btn = document.createElement('button');
         btn.className = 'block-option';
         btn.textContent = type;
-        btn.style.width = '50px';
-        btn.style.height = '50px';
-        btn.style.fontSize = '24px';
         
-        btn.onclick = () => {
+        btn.style.width = '60px';
+        btn.style.height = '60px';
+        btn.style.fontSize = '28px';
+        btn.style.fontWeight = 'bold';
+        btn.style.backgroundColor = COLORS[type];
+        btn.style.color = '#000';
+        btn.style.border = '3px solid #fff';
+        btn.style.borderRadius = '8px';
+        btn.style.cursor = 'pointer';
+        
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
             if (socket) socket.emit('sendNextBlock', type);
+            
             if (DOM.currentFallingBlockInfo) {
-                DOM.currentFallingBlockInfo.innerHTML = `<p style="color:#00f000">Enviada: <strong>${type}</strong></p>`;
+                DOM.currentFallingBlockInfo.innerHTML = `<h3 style="margin-top:15px; color:#fff;">Pieza enviada: <span style="color:${COLORS[type]};">${type}</span></h3>`;
             }
-            populateSelectorBlocks(getRandomShapes(3)); // Generar 3 piezas nuevas
-        };
+            
+            populateSelectorBlocks(getRandomShapes(3)); 
+        });
+        
         DOM.blockSelectionDiv.appendChild(btn);
     });
 }
 
 // ==========================================
-// LÓGICA DEL CONSTRUCTOR / INDIVIDUAL
+// 5. LÓGICA DEL CONSTRUCTOR / INDIVIDUAL
 // ==========================================
 function startGameLoop() {
     currentBoard = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
@@ -203,7 +258,7 @@ function startGameLoop() {
 
 function spawnBlock() {
     let typeToSpawn;
-    // Si el Selector envió una pieza, la usamos y limpiamos el buffer
+    
     if (gameMode === 'multiplayer' && window.constructorNextPiece) {
         typeToSpawn = window.constructorNextPiece;
         window.constructorNextPiece = null; 
@@ -216,12 +271,11 @@ function spawnBlock() {
     currentBlockX = Math.floor((BOARD_WIDTH - currentBlock.matrix[0].length) / 2);
     currentBlockY = 0;
     
-    // Comprobar si el tablero se llenó (Derrota del Constructor)
     if (checkCollision(currentBlockX, currentBlockY, currentBlock.matrix)) {
         gameActive = false;
         clearInterval(gameInterval);
         if (gameMode === 'multiplayer' && socket) {
-            socket.emit('constructorLost'); // Avisar al servidor para que el Selector gane
+            socket.emit('constructorLost'); 
         } else {
             DOM.gameOverOverlay.style.display = 'flex';
             DOM.gameOverMessage.textContent = "¡Fin del Juego!";
@@ -307,6 +361,9 @@ function syncStateToServer() {
     }
 }
 
+// ==========================================
+// 6. RENDERIZADO
+// ==========================================
 function drawBoard() {
     if (!DOM.gameBoard) return;
     DOM.gameBoard.innerHTML = '';
