@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Dual Nexo</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Cliente de Socket.IO servido localmente desde Express -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js" defer></script>
+</head>
+<body>
+
+    <!-- Pantalla de inicio -->
+    <div id="start-screen" class="screen">
+        <h1>TETRIS DUAL NEXO</h1>
+        <p id="status-message">Conectando al servidor...</p>
+        <div class="menu-buttons">
+            <button id="single-player-button" class="btn">Modo Individual</button>
+            <button id="online-multiplayer-button" class="btn multiplayer">Multijugador Online</button>
+        </div>
+    </div>
+
+    <!-- Pantalla principal del juego -->
+    <div id="game-content" class="screen" style="display: none;">
+        <div class="game-header">
+            <div id="player-role-display">Modo: Individual</div>
+            <div id="timer">Tiempo: 00:00</div>
+        </div>
+
+        <div id="game-board-container">
+            <div id="game-board"></div>
+        </div>
+
+        <!-- Panel del Rol Selector (Multijugador) -->
+        <div id="selector-section" style="display: none;">
+            <h3>Elige el próximo bloque:</h3>
+            <div id="block-selection"></div>
+            <div id="current-falling-block-info"></div>
+        </div>
+
+        <!-- Botones de Control en pantalla (Un jugador y Multijugador) -->
+        <div class="controls-container">
+            <div id="single-player-controls" style="display: none;">
+                <button id="sp-rotate-button" class="ctrl-btn">🔄 Rotar</button>
+                <button id="sp-hard-drop-button" class="ctrl-btn drop">⚡ Caída Dura</button>
+            </div>
+            <div id="constructor-controls" style="display: none;">
+                <button id="rotate-button" class="ctrl-btn">🔄 Rotar (MP)</button>
+                <button id="hard-drop-button" class="ctrl-btn drop">⚡ Caída Dura (MP)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantallas superpuestas (Overlays) -->
+    <div id="game-over-overlay" class="overlay" style="display: none;">
+        <div class="overlay-content">
+            <h2 id="game-over-message">¡Fin del Juego!</h2>
+            <button id="restart-button" class="btn">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <div id="pause-overlay" class="overlay" style="display: none;">
+        <div class="overlay-content">
+            <h2>Juego Pausado</h2>
+        </div>
+    </div>
+
+    <audio id="background-music" loop src=""></audio>
+</body>
+</html>
