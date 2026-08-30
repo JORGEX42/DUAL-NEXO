@@ -68,7 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
 function addEventListeners() {
     DOM.restartButton.addEventListener('click', () => location.reload());
     
+    // Controlador de audio
+    const playMusic = () => {
+        const bgMusic = document.getElementById('background-music');
+        if (bgMusic) {
+            bgMusic.volume = 0.2; // Volumen bajo para hablar por Discord
+            // El .catch evita errores en consola si el navegador es muy estricto
+            bgMusic.play().catch(err => console.log("Audio en espera de interacción:", err));
+        }
+    };
+
     DOM.singlePlayerButton.addEventListener('click', () => {
+        playMusic(); // Inicia la música
+        
         gameMode = 'single';
         gameActive = true;
         DOM.startScreen.style.display = 'none';
@@ -81,6 +93,8 @@ function addEventListeners() {
     });
 
     DOM.onlineMultiplayerButton.addEventListener('click', () => {
+        playMusic(); // Inicia la música
+        
         if (socket && socket.connected) {
             socket.emit('joinRoom', { channelId: 'default-room' });
         }
@@ -113,6 +127,13 @@ function addEventListeners() {
             }
         }
     }, true);
+
+    // Botones de pantalla 
+    if (DOM.rotateButton) DOM.rotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
+    if (DOM.spRotateButton) DOM.spRotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
+    if (DOM.hardDropButton) DOM.hardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
+    if (DOM.spHardDropButton) DOM.spHardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
+}
 
     // Botones de pantalla (opcionales para móvil)
     if (DOM.rotateButton) DOM.rotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
