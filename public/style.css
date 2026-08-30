@@ -1,0 +1,223 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    touch-action: manipulation;
+}
+
+body {
+    background-color: #121214;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.screen {
+    width: 100%;
+    max-width: 440px;
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+/* Pantalla de Inicio */
+#start-screen {
+    justify-content: center;
+    text-align: center;
+    gap: 20px;
+}
+
+#start-screen h1 {
+    font-size: 2.2rem;
+    color: #f0a000;
+    text-shadow: 0 0 10px rgba(240, 160, 0, 0.5);
+}
+
+#status-message {
+    font-size: 0.95rem;
+    color: #aaaaaa;
+    min-height: 50px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 80%;
+}
+
+.btn {
+    padding: 14px 24px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #444;
+    transform: scale(1.02);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn.multiplayer {
+    background-color: #0066ff;
+}
+
+.btn.multiplayer:hover {
+    background-color: #0052cc;
+}
+
+/* Cabecera del juego */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 360px;
+    padding: 8px 15px;
+    background: #1e1e24;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+/* Contenedor del Tablero (Ensanchado y ampliado verticalmente) */
+#game-board-container {
+    position: relative;
+    height: 65vh;
+    max-height: 580px;
+    aspect-ratio: 1 / 2;
+    border: 3px solid #333344;
+    border-radius: 6px;
+    background-color: #08080a;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-board {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* Panel Selector */
+#selector-section {
+    text-align: center;
+    width: 100%;
+    max-width: 360px;
+    background: #1e1e24;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+#block-selection {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.block-option {
+    padding: 8px 14px;
+    background: #2a2a35;
+    border: 1px solid #444;
+    color: white;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.block-option:hover {
+    background: #0066ff;
+}
+
+.block-option:active {
+    transform: scale(0.95);
+}
+
+/* Controles en pantalla */
+.controls-container {
+    width: 100%;
+    max-width: 360px;
+    margin-bottom: 5px;
+}
+
+#single-player-controls, #constructor-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+}
+
+.ctrl-btn {
+    flex: 1;
+    padding: 12px 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    background-color: #2b2b36;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+.ctrl-btn:active {
+    background-color: #444455;
+    transform: scale(0.96);
+}
+
+.ctrl-btn.drop {
+    background-color: #e63946;
+}
+
+.ctrl-btn.drop:active {
+    background-color: #c12a36;
+}
+
+/* Overlays */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.overlay-content {
+    background: #1e1e24;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
