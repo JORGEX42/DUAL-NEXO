@@ -13,14 +13,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 const rooms = {};
 
 io.on('connection', (socket) => {
-    console.log('Usuario conectado:', socket.id);
-
     socket.on('joinRoom', ({ channelId, user }) => {
         const roomId = channelId || 'default-room';
         socket.join(roomId);
 
         if (!rooms[roomId]) {
-            rooms[roomId] = { players: [], interval: null, timeLeft: 900 }; // 900s = 15 min
+            rooms[roomId] = { players: [], interval: null, timeLeft: 900 }; // 15 minutos
         }
 
         const room = rooms[roomId];
@@ -31,15 +29,15 @@ io.on('connection', (socket) => {
             socket.emit('roleAssignment', role);
         }
 
-        // Iniciar la partida y el temporizador cuando hay 2 jugadores
+        // Iniciar partida con envío seguro de datos
         if (room.players.length === 2 && !room.interval) {
-            io.to(roomId).emit('gameStartReady');
+            io.to(roomId).emit('gameStartReady', { players: room.players });
+            io.to(roomId).emit('timerSync', room.timeLeft); // Fuerza el timer al instante
             
             room.interval = setInterval(() => {
                 room.timeLeft--;
                 io.to(roomId).emit('timerSync', room.timeLeft);
                 
-                // Si el tiempo llega a 0, gana el Constructor
                 if (room.timeLeft <= 0) {
                     clearInterval(room.interval);
                     room.interval = null;
@@ -49,19 +47,16 @@ io.on('connection', (socket) => {
         }
     });
 
-    // El Constructor envía su tablero para que el Selector lo vea
     socket.on('syncGameState', (data) => {
         let roomId = Array.from(socket.rooms).find(r => r !== socket.id);
         if (roomId) socket.to(roomId).emit('gameStateUpdate', data);
     });
 
-    // El Selector envía la pieza elegida al Constructor
     socket.on('sendNextBlock', (type) => {
         let roomId = Array.from(socket.rooms).find(r => r !== socket.id);
         if (roomId) socket.to(roomId).emit('receiveNextBlock', type);
     });
 
-    // El Constructor avisa si se llenó su tablero (Gana el Selector)
     socket.on('constructorLost', () => {
         let roomId = Array.from(socket.rooms).find(r => r !== socket.id);
         if (roomId && rooms[roomId]) {
