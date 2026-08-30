@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Dual Nexo</title>
-    <link rel="stylesheet" href="style.css?v=3">
-    <!-- Cliente de Socket.IO servido localmente desde Express -->
+    <!-- Forzamos v4 para limpiar la caché de Discord -->
+    <link rel="stylesheet" href="style.css?v=4">
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=3" defer></script>
+    <script src="game.js?v=4" defer></script>
 </head>
 <body tabindex="0">
 
@@ -25,7 +25,7 @@
     <div id="game-content" class="screen" style="display: none;">
         <div class="game-header">
             <div id="player-role-display">Modo: Individual</div>
-            <div id="timer">Tiempo: 00:00</div>
+            <div id="timer">Tiempo: 15:00</div>
         </div>
 
         <div id="game-board-container">
@@ -39,7 +39,7 @@
             <div id="current-falling-block-info"></div>
         </div>
 
-        <!-- Botones de Control en pantalla (Un jugador y Multijugador) -->
+        <!-- Botones de Control en pantalla -->
         <div class="controls-container">
             <div id="single-player-controls" style="display: none;">
                 <button id="sp-rotate-button" class="ctrl-btn">🔄 Rotar</button>
@@ -60,12 +60,5 @@
         </div>
     </div>
 
-    <div id="pause-overlay" class="overlay" style="display: none;">
-        <div class="overlay-content">
-            <h2>Juego Pausado</h2>
-        </div>
-    </div>
-
-    <audio id="background-music" loop src=""></audio>
 </body>
 </html>
