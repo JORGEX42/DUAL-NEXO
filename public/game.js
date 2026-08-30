@@ -149,38 +149,39 @@ function addEventListeners() {
         }
     });
 
-document.addEventListener('keydown', (e) => {
+// Forzar el foco de teclado al hacer clic en cualquier parte del juego
+window.addEventListener('click', () => {
+    window.focus();
+});
+
+// Escuchar teclas en 'window' con fase de captura (true)
+window.addEventListener('keydown', (e) => {
     if (!gameActive) return;
 
-    // Detectamos tanto el carácter (key) como la tecla física (code)
+    // Asegura que la ventana activa siga siendo el iframe del juego
+    window.focus();
+
     const key = e.key ? e.key.toLowerCase() : '';
     const code = e.code ? e.code : '';
 
     let mappedKey = null;
 
-    // Movimiento Izquierda (A o Flecha Izquierda)
     if (key === 'a' || key === 'arrowleft' || code === 'KeyA' || code === 'ArrowLeft') {
         mappedKey = 'ArrowLeft';
-    } 
-    // Movimiento Derecha (D o Flecha Derecha)
-    else if (key === 'd' || key === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') {
+    } else if (key === 'd' || key === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') {
         mappedKey = 'ArrowRight';
-    } 
-    // Caída Suave (S o Flecha Abajo)
-    else if (key === 's' || key === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') {
+    } else if (key === 's' || key === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') {
         mappedKey = 'ArrowDown';
-    } 
-    // Rotar (W o Flecha Arriba)
-    else if (key === 'w' || key === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') {
+    } else if (key === 'w' || key === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') {
         mappedKey = 'ArrowUp';
-    } 
-    // Caída Instantánea (Espacio)
-    else if (key === ' ' || code === 'Space') {
+    } else if (key === ' ' || code === 'Space') {
         mappedKey = ' ';
     }
 
     if (mappedKey) {
+        // Evita que Discord intercepte la tecla para atajos del cliente
         e.preventDefault();
+        e.stopPropagation();
 
         if (gameMode === 'multiplayer' && myRole === 'constructor') {
             if (socket) socket.emit('playerAction', mappedKey);
@@ -188,7 +189,7 @@ document.addEventListener('keydown', (e) => {
             handleSinglePlayerInput({ key: mappedKey });
         }
     }
-});
+}, true); // El 'true' permite capturar la tecla antes de que la intercepte el contenedor de Discord
 
     safeListen(DOM.rotateButton, 'rotateButton', 'click', () => sendPlayerAction('rotate'));
     safeListen(DOM.spRotateButton, 'spRotateButton', 'click', () => handleSinglePlayerInput({ key: 'ArrowUp' }));
