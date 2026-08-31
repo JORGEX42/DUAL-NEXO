@@ -67,44 +67,28 @@ document.addEventListener('DOMContentLoaded', () => {
 function addEventListeners() {
     DOM.restartButton.addEventListener('click', () => location.reload());
     
-    // Función segura para arrancar la música dinámicamente con la interacción del usuario
+   // Función segura y mejorada para arrancar la música dinámicamente
     const startBackgroundMusic = () => {
         let bgMusic = document.getElementById('background-music');
         if (!bgMusic) {
             bgMusic = document.createElement('audio');
             bgMusic.id = 'background-music';
-            bgMusic.src = 'musica.mp3';
+            bgMusic.src = '/musica.mp3'; // Usamos barra al inicio para asegurar que la busque en la raíz pública
             bgMusic.loop = true;
-            bgMusic.volume = 0.2; // Volumen al 20% para no saturar Discord
+            bgMusic.volume = 0.3; // Subimos ligeramente al 30% por si acaso
             document.body.appendChild(bgMusic);
         }
-        bgMusic.play().catch(err => console.log("Audio en espera de interacción o archivo no encontrado:", err));
-    };
-
-    DOM.singlePlayerButton.addEventListener('click', () => {
-        startBackgroundMusic(); // Activa la música al pulsar
         
-        gameMode = 'single';
-        gameActive = true;
-        DOM.startScreen.style.display = 'none';
-        DOM.gameContent.style.display = 'flex';
-        DOM.singlePlayerControls.style.display = 'flex';
-        DOM.constructorControls.style.display = 'none';
-        DOM.selectorSection.style.display = 'none';
-        DOM.playerRoleDisplay.textContent = "Modo: Individual";
-        startGameLoop();
-    });
-
-    DOM.onlineMultiplayerButton.addEventListener('click', () => {
-        startBackgroundMusic(); // Activa la música al pulsar
-        
-        if (socket && socket.connected) {
-            socket.emit('joinRoom', { channelId: 'default-room' });
-            DOM.statusMessage.textContent = 'Buscando oponente en sala...';
-        } else {
-            DOM.statusMessage.textContent = 'No estás conectado al servidor aún.';
+        // Forzamos la reproducción controlando la promesa del navegador
+        const playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log("¡Música sonando correctamente!");
+            }).catch(error => {
+                console.log("El navegador bloqueó la reproducción automática o falta el archivo:", error);
+            });
         }
-    });
+    };
 
     window.addEventListener('click', () => window.focus());
     document.addEventListener('click', () => window.focus());
