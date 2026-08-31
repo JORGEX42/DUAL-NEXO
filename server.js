@@ -5,7 +5,10 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { 
+    cors: { origin: "*" },
+    transports: ['polling', 'websocket'] // Forzar compatibilidad con plataformas en la nube
+});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -13,26 +16,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 const rooms = {};
 
 io.on('connection', (socket) => {
-    socket.on('joinRoom', ({ channelId, user }) => {
+    console.log('Usuario conectado:', socket.id);
+
+    socket.on('joinRoom', ({ channelId } = {}) => {
         const roomId = channelId || 'default-room';
         socket.join(roomId);
 
         if (!rooms[roomId]) {
-            rooms[roomId] = { players: [], interval: null, timeLeft: 900 }; // 15 minutos
+            rooms[roomId] = { players: [], interval: null, timeLeft: 900 };
         }
 
         const room = rooms[roomId];
         
-        if (!room.players.find(p => p.id === socket.id)) {
+        // Evitar duplicados si el socket ya está registrado
+        let existingPlayer = room.players.find(p => p.id === socket.id);
+        if (!existingPlayer) {
             const role = room.players.length === 0 ? 'constructor' : 'selector';
-            room.players.push({ id: socket.id, role, username: user ? user.username : 'Jugador' });
+            room.players.push({ id: socket.id, role, username: 'Jugador' });
             socket.emit('roleAssignment', role);
         }
 
-        // Iniciar partida con envío seguro de datos
+        console.log(`Sala ${roomId} tiene ${room.players.length} jugadores.`);
+
+        // Si hay 2 jugadores, iniciamos la partida
         if (room.players.length === 2 && !room.interval) {
             io.to(roomId).emit('gameStartReady', { players: room.players });
-            io.to(roomId).emit('timerSync', room.timeLeft); // Fuerza el timer al instante
+            io.to(roomId).emit('timerSync', room.timeLeft);
             
             room.interval = setInterval(() => {
                 room.timeLeft--;
@@ -67,6 +76,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        console.log('Usuario desconectado:', socket.id);
         for (const roomId in rooms) {
             rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
             if (rooms[roomId].players.length === 0) {
@@ -78,4 +88,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+server.listen(PORT, () => console.log(`Servidor ejecutándose en el puerto ${PORT}`));
