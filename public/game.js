@@ -67,7 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
 function addEventListeners() {
     DOM.restartButton.addEventListener('click', () => location.reload());
     
+    // Función segura para arrancar la música dinámicamente con la interacción del usuario
+    const startBackgroundMusic = () => {
+        let bgMusic = document.getElementById('background-music');
+        if (!bgMusic) {
+            bgMusic = document.createElement('audio');
+            bgMusic.id = 'background-music';
+            bgMusic.src = 'musica.mp3';
+            bgMusic.loop = true;
+            bgMusic.volume = 0.2; // Volumen al 20% para no saturar Discord
+            document.body.appendChild(bgMusic);
+        }
+        bgMusic.play().catch(err => console.log("Audio en espera de interacción o archivo no encontrado:", err));
+    };
+
     DOM.singlePlayerButton.addEventListener('click', () => {
+        startBackgroundMusic(); // Activa la música al pulsar
+        
         gameMode = 'single';
         gameActive = true;
         DOM.startScreen.style.display = 'none';
@@ -80,6 +96,8 @@ function addEventListeners() {
     });
 
     DOM.onlineMultiplayerButton.addEventListener('click', () => {
+        startBackgroundMusic(); // Activa la música al pulsar
+        
         if (socket && socket.connected) {
             socket.emit('joinRoom', { channelId: 'default-room' });
             DOM.statusMessage.textContent = 'Buscando oponente en sala...';
