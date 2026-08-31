@@ -146,10 +146,29 @@ function addEventListeners() {
 // 3. CONEXIÓN SOCKET
 // ==========================================
 function initializeSocketConnection() {
-    socket = io();
+    // Forzar la conexión absoluta al host actual para evitar bloqueos del iframe de Discord
+    const serverUrl = window.location.origin;
+    
+    socket = io(serverUrl, {
+        transports: ['polling', 'websocket'],
+        path: '/socket.io/'
+    });
 
     socket.on('connect', () => {
-        if (DOM.statusMessage) DOM.statusMessage.textContent = 'Conectado. Elige un modo.';
+        console.log('Conectado con ID:', socket.id);
+        if (DOM.statusMessage) {
+            DOM.statusMessage.textContent = 'Conectado. Elige un modo.';
+        }
+        if (DOM.onlineMultiplayerButton) {
+            DOM.onlineMultiplayerButton.disabled = false;
+        }
+    });
+
+    socket.on('connect_error', (err) => {
+        console.error('Error de conexión Socket.IO:', err);
+        if (DOM.statusMessage) {
+            DOM.statusMessage.textContent = 'Error de conexión con el servidor. Reintentando...';
+        }
     });
 
     socket.on('roleAssignment', (role) => {
