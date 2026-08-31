@@ -35,7 +35,6 @@ const COLORS = {
 // 2. INICIALIZACIÓN Y EVENTOS
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Forzar foco en el juego
     if (document.body) document.body.focus();
 
     DOM = {
@@ -68,19 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function addEventListeners() {
     DOM.restartButton.addEventListener('click', () => location.reload());
     
-    // Controlador de audio
-    const playMusic = () => {
-        const bgMusic = document.getElementById('background-music');
-        if (bgMusic) {
-            bgMusic.volume = 0.2; // Volumen bajo para hablar por Discord
-            // El .catch evita errores en consola si el navegador es muy estricto
-            bgMusic.play().catch(err => console.log("Audio en espera de interacción:", err));
-        }
-    };
-
     DOM.singlePlayerButton.addEventListener('click', () => {
-        playMusic(); // Inicia la música
-        
         gameMode = 'single';
         gameActive = true;
         DOM.startScreen.style.display = 'none';
@@ -93,18 +80,17 @@ function addEventListeners() {
     });
 
     DOM.onlineMultiplayerButton.addEventListener('click', () => {
-        playMusic(); // Inicia la música
-        
         if (socket && socket.connected) {
             socket.emit('joinRoom', { channelId: 'default-room' });
+            DOM.statusMessage.textContent = 'Buscando oponente en sala...';
+        } else {
+            DOM.statusMessage.textContent = 'No estás conectado al servidor aún.';
         }
     });
 
-    // Mantener el foco al hacer click para Discord
     window.addEventListener('click', () => window.focus());
     document.addEventListener('click', () => window.focus());
 
-    // Control por teclado (WASD + Flechas) con fase de captura
     window.addEventListener('keydown', (e) => {
         if (!gameActive) return;
         window.focus();
@@ -128,14 +114,6 @@ function addEventListeners() {
         }
     }, true);
 
-    // Botones de pantalla 
-    if (DOM.rotateButton) DOM.rotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
-    if (DOM.spRotateButton) DOM.spRotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
-    if (DOM.hardDropButton) DOM.hardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
-    if (DOM.spHardDropButton) DOM.spHardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
-}
-
-    // Botones de pantalla (opcionales para móvil)
     if (DOM.rotateButton) DOM.rotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
     if (DOM.spRotateButton) DOM.spRotateButton.addEventListener('click', () => handleInput({ key: 'ArrowUp' }));
     if (DOM.hardDropButton) DOM.hardDropButton.addEventListener('click', () => handleInput({ key: ' ' }));
@@ -146,28 +124,18 @@ function addEventListeners() {
 // 3. CONEXIÓN SOCKET
 // ==========================================
 function initializeSocketConnection() {
-    // Forzar la conexión absoluta al host actual para evitar bloqueos del iframe de Discord
-    const serverUrl = window.location.origin;
-    
-    socket = io(serverUrl, {
-        transports: ['polling', 'websocket'],
-        path: '/socket.io/'
-    });
+    socket = io();
 
     socket.on('connect', () => {
-        console.log('Conectado con ID:', socket.id);
         if (DOM.statusMessage) {
             DOM.statusMessage.textContent = 'Conectado. Elige un modo.';
-        }
-        if (DOM.onlineMultiplayerButton) {
-            DOM.onlineMultiplayerButton.disabled = false;
         }
     });
 
     socket.on('connect_error', (err) => {
-        console.error('Error de conexión Socket.IO:', err);
+        console.error('Error de conexión:', err);
         if (DOM.statusMessage) {
-            DOM.statusMessage.textContent = 'Error de conexión con el servidor. Reintentando...';
+            DOM.statusMessage.textContent = 'Error conectando al servidor. Comprueba Render.';
         }
     });
 
@@ -268,13 +236,10 @@ function populateSelectorBlocks(options) {
         
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            
             if (socket) socket.emit('sendNextBlock', type);
-            
             if (DOM.currentFallingBlockInfo) {
                 DOM.currentFallingBlockInfo.innerHTML = `<h3 style="margin-top:15px; color:#fff;">Pieza enviada: <span style="color:${COLORS[type]};">${type}</span></h3>`;
             }
-            
             populateSelectorBlocks(getRandomShapes(3)); 
         });
         
