@@ -12,6 +12,7 @@ let gameMode = null;
 let gameInterval = null;
 
 let DOM = {}; 
+let bgMusic = null; // Objeto de audio global para la música de fondo
 
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
@@ -67,28 +68,48 @@ document.addEventListener('DOMContentLoaded', () => {
 function addEventListeners() {
     DOM.restartButton.addEventListener('click', () => location.reload());
     
-   // Función segura y mejorada para arrancar la música dinámicamente
+    // Precargamos la música de fondo en segundo plano de forma preventiva
+    if (!bgMusic) {
+        bgMusic = new Audio('musica.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.3; // Volumen al 30%
+        bgMusic.load();
+    }
+
     const startBackgroundMusic = () => {
-        let bgMusic = document.getElementById('background-music');
-        if (!bgMusic) {
-            bgMusic = document.createElement('audio');
-            bgMusic.id = 'background-music';
-            bgMusic.src = '/musica.mp3'; // Usamos barra al inicio para asegurar que la busque en la raíz pública
-            bgMusic.loop = true;
-            bgMusic.volume = 0.3; // Subimos ligeramente al 30% por si acaso
-            document.body.appendChild(bgMusic);
-        }
-        
-        // Forzamos la reproducción controlando la promesa del navegador
-        const playPromise = bgMusic.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log("¡Música sonando correctamente!");
-            }).catch(error => {
-                console.log("El navegador bloqueó la reproducción automática o falta el archivo:", error);
+        if (bgMusic) {
+            bgMusic.play().then(() => {
+                console.log("Música reproduciéndose con éxito.");
+            }).catch(err => {
+                console.log("El navegador/Discord requiere interacción o el archivo no carga:", err);
             });
         }
     };
+
+    DOM.singlePlayerButton.addEventListener('click', () => {
+        startBackgroundMusic(); // Activa la música al pulsar
+        
+        gameMode = 'single';
+        gameActive = true;
+        DOM.startScreen.style.display = 'none';
+        DOM.gameContent.style.display = 'flex';
+        DOM.singlePlayerControls.style.display = 'flex';
+        DOM.constructorControls.style.display = 'none';
+        DOM.selectorSection.style.display = 'none';
+        DOM.playerRoleDisplay.textContent = "Modo: Individual";
+        startGameLoop();
+    });
+
+    DOM.onlineMultiplayerButton.addEventListener('click', () => {
+        startBackgroundMusic(); // Activa la música al pulsar
+        
+        if (socket && socket.connected) {
+            socket.emit('joinRoom', { channelId: 'default-room' });
+            DOM.statusMessage.textContent = 'Buscando oponente en sala...';
+        } else {
+            DOM.statusMessage.textContent = 'No estás conectado al servidor aún.';
+        }
+    });
 
     window.addEventListener('click', () => window.focus());
     document.addEventListener('click', () => window.focus());
