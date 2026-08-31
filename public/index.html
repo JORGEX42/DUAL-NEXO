@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Dual Nexo</title>
-    <!-- Forzamos v4 para limpiar la caché de Discord -->
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=6">
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=4" defer></script>
+    <script src="game.js?v=6" defer></script>
 </head>
 <body tabindex="0">
 
@@ -16,8 +15,8 @@
         <h1>TETRIS DUAL NEXO</h1>
         <p id="status-message">Conectando al servidor...</p>
         <div class="menu-buttons">
-            <button id="single-player-button" class="btn">Modo Individual</button>
-            <button id="online-multiplayer-button" class="btn multiplayer">Multijugador Online</button>
+            <button id="single-player-button" class="btn" disabled>Modo Individual</button>
+            <button id="online-multiplayer-button" class="btn multiplayer" disabled>Multijugador Online</button>
         </div>
     </div>
 
@@ -60,6 +59,6 @@
         </div>
     </div>
 
-<audio id="background-music" loop src="musica.mp3"></audio>
+    <audio id="background-music" loop src="musica.mp3"></audio>
 </body>
 </html>
